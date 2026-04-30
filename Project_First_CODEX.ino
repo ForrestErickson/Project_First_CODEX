@@ -20,7 +20,6 @@ constexpr char MQTT_BROKER[] = "public.cloud.shiftr.io";
 constexpr uint16_t MQTT_PORT = 1883;
 constexpr char MQTT_USER[] = "public";
 constexpr char MQTT_PASSWORD[] = "public";
-constexpr char MQTT_CLIENT_ID[] = "F4650BBB3EDC";
 constexpr char MQTT_TOPIC_STATUS[] = "F4650BBB3EDC_ALM";
 constexpr char MQTT_TOPIC_BOOT[] = "F4650BBB3EDC_ACK";
 constexpr char PROGRAM_NAME[] = "Project_First_CODEX";
@@ -30,6 +29,7 @@ PubSubClient mqttClient(wifiClient);
 WiFiManager wm;
 WebServer webServer(80);
 HTTPUpdateServer httpUpdater;
+String deviceClientId;
 
 bool ledState = false;
 bool lastButtonReading = HIGH;
@@ -46,8 +46,15 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 void setupOTA() {
-  ArduinoOTA.setHostname(MQTT_CLIENT_ID);
+  ArduinoOTA.setHostname(deviceClientId.c_str());
   ArduinoOTA.begin();
+}
+
+String getDeviceClientIdFromMac() {
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  mac.toUpperCase();
+  return mac;
 }
 
 void setupWebServer() {
@@ -74,7 +81,7 @@ void connectMqttIfNeeded(uint32_t nowMs) {
   }
   lastMqttReconnectMs = nowMs;
 
-  if (mqttClient.connect(MQTT_CLIENT_ID, MQTT_USER, MQTT_PASSWORD)) {
+  if (mqttClient.connect(deviceClientId.c_str(), MQTT_USER, MQTT_PASSWORD)) {
     mqttClient.publish(MQTT_TOPIC_STATUS, "online", true);
     mqttClient.subscribe(MQTT_TOPIC_BOOT);
   }
@@ -128,6 +135,9 @@ void setup() {
   Serial.println("Wi-Fi startup mode: station with fallback to soft access point (config portal).");
   // Starts captive portal if credentials are not already saved.
   wm.autoConnect("ESP32S2-Setup");
+
+  deviceClientId = getDeviceClientIdFromMac();
+  Serial.printf("Device client ID (from MAC): %s\n", deviceClientId.c_str());
 
   const wifi_mode_t wifiMode = WiFi.getMode();
   if (wifiMode == WIFI_AP || wifiMode == WIFI_AP_STA) {
