@@ -1,4 +1,4 @@
-# ESP32-S2 Embedded System Starter
+# ESP32 Dev Kit 1 Embedded System Starter
 
 ## Features implemented
 - Starts from a **BLINK** baseline using non-blocking timing.
@@ -20,11 +20,12 @@ Install these libraries in Arduino IDE (or PlatformIO equivalents):
 
 ## Configuration to update
 Before flashing, update these constants in the sketch:
-- `MQTT_BROKER`
-- `MQTT_PORT`
-- `MQTT_CLIENT_ID`
-- MQTT topics (`MQTT_TOPIC_STATUS`, `MQTT_TOPIC_BOOT`)
+- `MQTT_BROKER` (`public.cloud.shiftr.io`)
+- `MQTT_PORT` (`1883`)
+- `MQTT_USER` / `MQTT_PASSWORD` (`public` / `public`)
+- `MQTT_CLIENT_ID` (`F4650BBB3EDC`)
+- MQTT topics publish/subscribe (`F4650BBB3EDC_ALM`, `F4650BBB3EDC_ACK`)
 
 ## Notes
 - BOOT button is configured on GPIO `0` with `INPUT_PULLUP`.
-- LED pin uses `LED_BUILTIN`; override if your board uses a different pin.
+- LED pin is set to GPIO `2` for ESP32 Dev Kit 1 built-in LED.
