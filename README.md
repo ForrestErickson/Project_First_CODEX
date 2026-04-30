@@ -10,7 +10,7 @@
 - Publishes a message when the **BOOT button** is pressed.
 
 ## Sketch
-- `esp32s2_system.ino`
+- `Project_First_CODEX.ino`
 
 ## Required libraries
 Install these libraries in Arduino IDE (or PlatformIO equivalents):
