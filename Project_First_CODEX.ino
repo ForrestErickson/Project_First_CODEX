@@ -12,8 +12,10 @@ constexpr uint8_t BOOT_BUTTON_PIN = 0;
 
 // Timings (ms)
 constexpr uint32_t BLINK_INTERVAL_MS = 500;
+constexpr uint32_t BLINK_INTERVAL_CONNECTED_MS = 250;
 constexpr uint32_t MQTT_RECONNECT_INTERVAL_MS = 5000;
 constexpr uint32_t BUTTON_DEBOUNCE_MS = 40;
+constexpr uint32_t BUTTON_LONG_PRESS_MS = 1000;
 
 // MQTT configuration
 constexpr char MQTT_BROKER[] = "public.cloud.shiftr.io";
@@ -35,8 +37,11 @@ bool ledState = false;
 bool lastButtonReading = HIGH;
 bool debouncedButtonState = HIGH;
 uint32_t lastBlinkMs = 0;
+uint32_t blinkIntervalMs = BLINK_INTERVAL_MS;
 uint32_t lastMqttReconnectMs = 0;
 uint32_t lastDebounceMs = 0;
+uint32_t buttonPressStartMs = 0;
+bool wasMqttConnected = false;
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String payloadText;
@@ -105,8 +110,22 @@ void connectMqttIfNeeded(uint32_t nowMs) {
   }
 }
 
+void handleMqttConnectionState() {
+  const bool mqttConnected = mqttClient.connected();
+  if (mqttConnected == wasMqttConnected) {
+    return;
+  }
+
+  wasMqttConnected = mqttConnected;
+  blinkIntervalMs = mqttConnected ? BLINK_INTERVAL_CONNECTED_MS : BLINK_INTERVAL_MS;
+  Serial.printf(
+    "[MQTT] %s. LED blink interval set to %lu ms.\n",
+    mqttConnected ? "Connected to broker" : "Disconnected from broker",
+    static_cast<unsigned long>(blinkIntervalMs));
+}
+
 void handleBlink(uint32_t nowMs) {
-  if ((nowMs - lastBlinkMs) < BLINK_INTERVAL_MS) {
+  if ((nowMs - lastBlinkMs) < blinkIntervalMs) {
     return;
   }
 
@@ -129,8 +148,13 @@ void handleBootButton(uint32_t nowMs) {
 
   if (debouncedButtonState != rawReading) {
     debouncedButtonState = rawReading;
-    if (debouncedButtonState == LOW && mqttClient.connected()) {
-      publishMqttWithSerial(MQTT_TOPIC_STATUS, "pressed", false);
+    if (debouncedButtonState == LOW) {
+      buttonPressStartMs = nowMs;
+    } else {
+      const uint32_t pressDurationMs = nowMs - buttonPressStartMs;
+      const char* message =
+        (pressDurationMs < BUTTON_LONG_PRESS_MS) ? "a1Lee has left Discord" : "a2Lee is in Discord";
+      publishMqttWithSerial(MQTT_TOPIC_STATUS, message, false);
     }
   }
 }
@@ -183,6 +207,7 @@ void loop() {
   webServer.handleClient();
   connectMqttIfNeeded(nowMs);
   mqttClient.loop();
+  handleMqttConnectionState();
   handleBlink(nowMs);
   handleBootButton(nowMs);
 }
