@@ -39,10 +39,28 @@ uint32_t lastMqttReconnectMs = 0;
 uint32_t lastDebounceMs = 0;
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  (void)topic;
-  (void)payload;
-  (void)length;
-  // Add subscription handling here when needed.
+  String payloadText;
+  payloadText.reserve(length);
+  for (unsigned int i = 0; i < length; ++i) {
+    payloadText += static_cast<char>(payload[i]);
+  }
+
+  Serial.printf("[MQTT RX] Topic: %s | Payload: %s\n", topic, payloadText.c_str());
+}
+
+bool publishMqttWithSerial(const char* topic, const char* payload, bool retained) {
+  if (!mqttClient.connected()) {
+    Serial.printf("[MQTT TX] Skipped publish (not connected) Topic: %s | Payload: %s\n", topic, payload);
+    return false;
+  }
+
+  const bool published = mqttClient.publish(topic, payload, retained);
+  Serial.printf(
+    "[MQTT TX] %s Topic: %s | Payload: %s\n",
+    published ? "Published" : "Publish failed",
+    topic,
+    payload);
+  return published;
 }
 
 void setupOTA() {
@@ -82,7 +100,7 @@ void connectMqttIfNeeded(uint32_t nowMs) {
   lastMqttReconnectMs = nowMs;
 
   if (mqttClient.connect(deviceClientId.c_str(), MQTT_USER, MQTT_PASSWORD)) {
-    mqttClient.publish(MQTT_TOPIC_STATUS, "online", true);
+    publishMqttWithSerial(MQTT_TOPIC_STATUS, "online", true);
     mqttClient.subscribe(MQTT_TOPIC_BOOT);
   }
 }
@@ -112,7 +130,7 @@ void handleBootButton(uint32_t nowMs) {
   if (debouncedButtonState != rawReading) {
     debouncedButtonState = rawReading;
     if (debouncedButtonState == LOW && mqttClient.connected()) {
-      mqttClient.publish(MQTT_TOPIC_STATUS, "pressed", false);
+      publishMqttWithSerial(MQTT_TOPIC_STATUS, "pressed", false);
     }
   }
 }
