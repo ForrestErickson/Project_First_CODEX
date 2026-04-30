@@ -2,6 +2,8 @@
 #include <WiFiManager.h>
 #include <ArduinoOTA.h>
 #include <PubSubClient.h>
+#include <WebServer.h>
+#include <HTTPUpdateServer.h>
 
 // Hardware pins (ESP32-S2)
 // ESP32 Dev Kit 1 built-in LED is on GPIO2
@@ -26,6 +28,8 @@ constexpr char PROGRAM_NAME[] = "Project_First_CODEX";
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 WiFiManager wm;
+WebServer webServer(80);
+HTTPUpdateServer httpUpdater;
 
 bool ledState = false;
 bool lastButtonReading = HIGH;
@@ -44,6 +48,20 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 void setupOTA() {
   ArduinoOTA.setHostname(MQTT_CLIENT_ID);
   ArduinoOTA.begin();
+}
+
+void setupWebServer() {
+  webServer.on("/", HTTP_GET, []() {
+    webServer.send(
+      200,
+      "text/html",
+      "<!doctype html><html><head><meta charset='utf-8'><title>Project_First_CODEX</title></head>"
+      "<body><h1>Project_First_CODEX.ino</h1><p>ESP32 sketch with Wi-Fi Manager, OTA, MQTT, and button/LED handling.</p>"
+      "<p>Firmware update page: <a href='/update'>/update</a></p></body></html>");
+  });
+
+  httpUpdater.setup(&webServer, "/update");
+  webServer.begin();
 }
 
 void connectMqttIfNeeded(uint32_t nowMs) {
@@ -127,12 +145,14 @@ void setup() {
   }
 
   setupOTA();
+  setupWebServer();
 }
 
 void loop() {
   const uint32_t nowMs = millis();
 
   ArduinoOTA.handle();
+  webServer.handleClient();
   connectMqttIfNeeded(nowMs);
   mqttClient.loop();
   handleBlink(nowMs);
