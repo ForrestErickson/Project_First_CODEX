@@ -3,6 +3,7 @@
 // Customized for ESP32-S2 Dev K1: onboard/status LED on GPIO 2.
 
 const uint8_t LED_PIN = 2;
+const unsigned long SERIAL_BAUD_RATE = 115200;
 const unsigned long LED_ON_MS = 1000;
 const unsigned long LED_OFF_MS = 1000;
 
@@ -11,6 +12,14 @@ unsigned long lastToggleAtMs = 0;
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, HIGH);
+
+  Serial.begin(SERIAL_BAUD_RATE);
+  Serial.println("[SETUP] Starting setup...");
+
+  // Placeholder for future setup steps (WiFi, OTA, MQTT, etc.)
+
+  Serial.println("[SETUP] Setup complete.");
   digitalWrite(LED_PIN, LOW);
 }
 
