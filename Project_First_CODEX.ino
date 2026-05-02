@@ -2,13 +2,17 @@
 // Based on the Arduino built-in "Blink" example.
 // Customized for ESP32-S2 Dev K1: onboard/status LED on GPIO 2.
 
+const uint8_t LED_PIN = 2;
+const unsigned long LED_ON_MS = 1000;
+const unsigned long LED_OFF_MS = 1000;
+
 void setup() {
-  pinMode(2, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
 }
 
 void loop() {
-  digitalWrite(2, HIGH);
-  delay(1000);
-  digitalWrite(2, LOW);
-  delay(1000);
+  digitalWrite(LED_PIN, HIGH);
+  delay(LED_ON_MS);
+  digitalWrite(LED_PIN, LOW);
+  delay(LED_OFF_MS);
 }
