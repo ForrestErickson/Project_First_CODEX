@@ -6,13 +6,21 @@ const uint8_t LED_PIN = 2;
 const unsigned long LED_ON_MS = 1000;
 const unsigned long LED_OFF_MS = 1000;
 
+bool ledIsOn = false;
+unsigned long lastToggleAtMs = 0;
+
 void setup() {
   pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 }
 
 void loop() {
-  digitalWrite(LED_PIN, HIGH);
-  delay(LED_ON_MS);
-  digitalWrite(LED_PIN, LOW);
-  delay(LED_OFF_MS);
+  const unsigned long nowMs = millis();
+  const unsigned long intervalMs = ledIsOn ? LED_ON_MS : LED_OFF_MS;
+
+  if (nowMs - lastToggleAtMs >= intervalMs) {
+    ledIsOn = !ledIsOn;
+    digitalWrite(LED_PIN, ledIsOn ? HIGH : LOW);
+    lastToggleAtMs = nowMs;
+  }
 }
